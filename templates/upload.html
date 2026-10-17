@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Dataset explorer{% endblock %}
+{% block page_title %}Dataset explorer{% endblock %}
+{% block content %}
+<div class="page-intro">
+  <p class="muted">Explore any CSV. Applicant and loan fields are detected automatically when available.</p>
+  <span class="pill">CSV only · up to 1,000 rows</span>
+</div>
+<div class="panel form-panel">
+  <div class="panel-head">
+    <div>
+      <h3>Explore and validate a loan dataset</h3>
+      <p>Upload a non-sensitive CSV. No column setup is needed.</p>
+    </div>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="upload-form">
+    <div class="upload-drop">
+      <div class="upload-symbol">⇧</div>
+      <strong>Select a CSV file</strong>
+      <p>We'll recognize common variations in applicant and loan column names. Other datasets can still be explored and summarized.</p>
+      <input type="file" name="dataset" accept=".csv,text/csv" required>
+    </div>
+    <button class="btn primary">Validate dataset →</button>
+  </form>
+</div>
+
+{% if detected_fields or missing_fields or valid_rows or invalid_rows %}
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>Automatic field detection and validation</h3>
+      <p>Detected fields are matched from your uploaded headers. Eligibility results use the rule-based demo score, not a real lending model.</p>
+    </div>
+    {% if not missing_fields %}<span class="pill">{{ valid_rows|length }} valid · {{ invalid_rows|length }} invalid</span>{% endif %}
+  </div>
+  {% if detected_fields %}
+  <div class="chip-list" style="margin-bottom:16px">
+    {% for field, column in detected_fields.items() %}<span class="pill">{{ field|replace('_', ' ')|title }} ← {{ column }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if missing_fields %}
+  <div class="notice">
+    <span>ⓘ</span>
+    <div><strong>Loan validation needs more identifiable data</strong><p>Could not automatically identify: {{ missing_fields|join(', ')|replace('_', ' ') }}. This dataset is still available for preview and descriptive analysis; no loan applications will be created from incomplete information.</p></div>
+  </div>
+  {% endif %}
+  {% if valid_rows %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>CSV row</th><th>Applicant</th><th>Credit score</th><th>Demo result</th><th>Risk</th><th>Loan status on import</th></tr>
+      </thead>
+      <tbody>
+        {% for row in valid_rows %}
+        <tr>
+          <td>{{ row.source_row }}</td>
+          <td>{{ row.name }}</td>
+          <td>{{ row.credit_score }}</td>
+          <td>{{ row.decision }} ({{ "%.0f%%"|format(row.probability * 100) }})</td>
+          <td><span class="tag {{ row.risk_category|lower }}">{{ row.risk_category }}</span></td>
+          <td><span class="tag {{ row.status|lower }}">{{ row.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:14px">A score above 750 auto-sets the imported application to Approved. Other scores are imported as Pending; the demo eligibility assessment is shown separately.</p>
+  {% if import_id %}
+  <form method="post" action="{{ url_for('import_csv_loans') }}" style="margin-top:16px">
+    <input type="hidden" name="import_id" value="{{ import_id }}">
+    <button class="btn primary">Add CSV to Loan Applications ({{ valid_rows|length }} valid row(s)) →</button>
+  </form>
+  {% endif %}
+  {% endif %}
+  {% if invalid_rows %}
+  <h3 style="margin:22px 0 12px">Rows to fix</h3>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>CSV row</th><th>Validation issue</th></tr></thead>
+      <tbody>{% for row in invalid_rows %}<tr><td>{{ row.row_number }}</td><td>{{ row.reason }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if preview is not none %}
+<div class="panel">
+  <div class="panel-head"><div><h3>Column overview</h3><p>{{ columns|length }} columns detected · {{ preview|length }} rows shown below</p></div></div>
+  <div class="chip-list">{% for column in columns %}<span class="pill">{{ column }}</span>{% endfor %}</div>
+</div>
+<div class="panel">
+  <div class="panel-head"><div><h3>First 10 rows</h3><p>Preview of uploaded data</p></div></div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr>{% for column in columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in preview %}<tr>{% for column in columns %}<td>{{ row[column] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+<div class="panel">
+  <div class="panel-head"><div><h3>Descriptive statistics</h3><p>Generated with Pandas</p></div></div>
+  <div class="table-scroll">{{ summary|safe }}</div>
+</div>
+{% endif %}
+{% endblock %}

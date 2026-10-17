@@ -1,0 +1,7 @@
+__pycache__/
+.venv/
+*.pyc
+loan_analytics.db
+uploads/*
+!uploads/.gitkeep
+.env

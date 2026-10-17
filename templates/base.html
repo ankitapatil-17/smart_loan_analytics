@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}LoanLens{% endblock %} | Smart Loan Analytics</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+{% if session.get('user_id') %}
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">L</div><div><strong>LoanLens</strong><small>Risk Analytics</small></div></div>
+  <div class="nav-label">WORKSPACE</div>
+  <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">◫ <span>Dashboard</span></a>
+  <a href="{{ url_for('applicants') }}" class="{{ 'active' if request.endpoint == 'applicants' else '' }}">♙ <span>Applicants</span></a>
+  <a href="{{ url_for('loans') }}" class="{{ 'active' if request.endpoint == 'loans' else '' }}">▤ <span>Loan applications</span></a>
+  <a href="{{ url_for('analytics') }}" class="{{ 'active' if request.endpoint == 'analytics' else '' }}">▥ <span>Analytics</span></a>
+  <a href="{{ url_for('history') }}" class="{{ 'active' if request.endpoint == 'history' else '' }}">◷ <span>Prediction history</span></a>
+  <a href="{{ url_for('upload') }}" class="{{ 'active' if request.endpoint == 'upload' else '' }}">⇧ <span>Dataset explorer</span></a>
+  <a href="{{ url_for('reports') }}" class="{{ 'active' if request.endpoint == 'reports' else '' }}">▧ <span>Reports</span></a>
+  <div class="sidebar-bottom"><div class="user-mini"><div class="avatar">{{ session.get('name','U')[0]|upper }}</div><div><strong>{{ session.get('name') }}</strong><small>{{ session.get('role','analyst')|title }}</small></div></div><a href="{{ url_for('logout') }}">↪ <span>Sign out</span></a></div>
+</aside>
+{% endif %}
+<main class="{{ 'main-content' if session.get('user_id') else 'auth-main' }}">
+  {% if session.get('user_id') %}
+  <header class="topbar"><div><span class="eyebrow">LOAN PORTFOLIO</span><h1>{% block page_title %}Overview{% endblock %}</h1></div><div class="top-actions"><span class="status-dot"></span><span>Local demo workspace</span><div class="avatar">{{ session.get('name','U')[0]|upper }}</div></div></header>
+  {% endif %}
+  <section class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+    <footer>LoanLens · Smart Loan Eligibility & Customer Risk Analytics <span>Educational demo only</span></footer>
+  </section>
+</main>
+</body>
+</html>
